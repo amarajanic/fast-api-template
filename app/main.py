@@ -4,6 +4,8 @@ from starlette.middleware.sessions import SessionMiddleware
 
 from fastapi import FastAPI
 
+from database.db import engine
+
 from blog.router import router as blog_router
 
 from user.router import router as user_router
@@ -19,6 +21,22 @@ from admin.router import router as admin_router
 from google_auth.router import router as google_router
 
 from theme.router import router as theme_router
+
+from blog.model import DbBlog
+
+from user.model import DbUser
+
+from role.model import DbRole
+
+from theme.model import DbTheme
+
+DbBlog.metadata.create_all(bind=engine)
+
+DbUser.metadata.create_all(bind=engine)
+
+DbRole.metadata.create_all(bind=engine)
+
+DbTheme.metadata.create_all(bind=engine)
 
 
 # from strawberry.asgi import GraphQL
@@ -57,9 +75,6 @@ app.include_router(theme_router)
 # app.add_route("/graphql", graphql_app)
 # app.add_websocket_route("/graphql", graphql_app)
 
-
-
 @app.get("/")
 async def read_root():
     return {"Hello": "World"}
-
