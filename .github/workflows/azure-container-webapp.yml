@@ -24,44 +24,45 @@
 # For more information on the Azure Web Apps Deploy action: https://github.com/Azure/webapps-deploy
 # For more samples to get started with GitHub Action workflows to deploy to Azure: https://github.com/Azure/actions-workflow-samples
 
-name: Build and deploy a container to an Azure Web App with Docker Compose
+name: Build and Deploy FastAPI App to Azure
 
 env:
-  AZURE_WEBAPP_NAME: fastapi-template  # set this to the name of your Azure Web App
+  AZURE_WEBAPP_NAME: fastapi-template  # Set this to the name of your Azure Web App
 
 on:
   push:
-    branches: [ "main" ]
+    branches: ["main"]
   workflow_dispatch:
 
 permissions:
   contents: read
+  packages: write
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout Repository
+        uses: actions/checkout@v4
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v1
 
-      - name: Log in to GitHub container registry
+      - name: Log in to GitHub Container Registry
         uses: docker/login-action@v2
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.TEST_GITHUB_TOKEN }}
 
-      - name: Lowercase the repo name and username
-        run: echo "REPO=${GITHUB_REPOSITORY,,}" >>${GITHUB_ENV}
+      - name: Set environment variables
+        run: echo "REPO=ghcr.io/${GITHUB_REPOSITORY,,}" >>${GITHUB_ENV}
 
-      - name: Build and push Docker images
+      - name: Build and push Docker image
         run: |
-          docker compose -f docker-compose.yml build
-          docker tag ghcr.io/${{ env.REPO }}:latest ghcr.io/${{ env.REPO }}:${{ github.sha }}
-          docker push ghcr.io/${{ env.REPO }}:${{ github.sha }}
+          docker build -t $REPO:${{ github.sha }} .
+          docker push $REPO:${{ github.sha }}
 
   deploy:
     permissions:
@@ -73,14 +74,10 @@ jobs:
       url: ${{ steps.deploy-to-webapp.outputs.webapp-url }}
 
     steps:
-      - name: Lowercase the repo name and username
-        run: echo "REPO=${GITHUB_REPOSITORY,,}" >>${GITHUB_ENV}
-
       - name: Deploy to Azure Web App
         id: deploy-to-webapp
         uses: azure/webapps-deploy@v2
         with:
           app-name: ${{ env.AZURE_WEBAPP_NAME }}
           publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
-          compose-file-path: ./docker-compose.yml
-
+          images: ghcr.io/${{ github.repository }}:${{ github.sha }}
