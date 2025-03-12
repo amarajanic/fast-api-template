@@ -57,10 +57,7 @@ jobs:
           password: ${{ secrets.TEST_GITHUB_TOKEN }}
 
       - name: Set environment variables
-        run: echo "REPO=ghcr.io/${{ github.actor }}/fast-api-template" >>${GITHUB_ENV}
-
-      - name: Set environment variables
-        run: echo "REPO=ghcr.io/${{ github.actor }}/fast-api-template" >> $GITHUB_ENV
+        run: echo "REPO=ghcr.io/${GITHUB_REPOSITORY,,}" >>${GITHUB_ENV}
 
       - name: Build and push Docker image
         run: |
@@ -77,8 +74,10 @@ jobs:
       url: ${{ steps.deploy-to-webapp.outputs.webapp-url }}
 
     steps:
-      - name: Build and push Docker image
-        run: |
-          docker build -t $REPO:${{ github.sha }} -t $REPO:latest .
-          docker push $REPO:${{ github.sha }}
-          docker push $REPO:latest
+      - name: Deploy to Azure Web App
+        id: deploy-to-webapp
+        uses: azure/webapps-deploy@v2
+        with:
+          app-name: ${{ env.AZURE_WEBAPP_NAME }}
+          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
+          images: ghcr.io/${{ github.repository }}:${{ github.sha }}
