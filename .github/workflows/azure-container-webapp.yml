@@ -57,10 +57,11 @@ jobs:
       - name: Lowercase the repo name and username
         run: echo "REPO=${GITHUB_REPOSITORY,,}" >>${GITHUB_ENV}
 
-      - name: Build and push Docker Compose services
+      - name: Build and push Docker images
         run: |
           docker compose -f docker-compose.yml build
-          docker compose -f docker-compose.yml push
+          docker tag ghcr.io/${{ env.REPO }}:latest ghcr.io/${{ env.REPO }}:${{ github.sha }}
+          docker push ghcr.io/${{ env.REPO }}:${{ github.sha }}
 
   deploy:
     permissions:
@@ -81,5 +82,5 @@ jobs:
         with:
           app-name: ${{ env.AZURE_WEBAPP_NAME }}
           publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
-          images: |
-            ghcr.io/${{ env.REPO }}:${{ github.sha }}  # Add all service images here
+          compose-file-path: ./docker-compose.yml
+
