@@ -1,5 +1,5 @@
 from typing import List
-from app.role.services import sync_data
+from role.services import sync_data
 from fastapi import APIRouter, Depends, status
 from sqlalchemy.orm import Session
 
